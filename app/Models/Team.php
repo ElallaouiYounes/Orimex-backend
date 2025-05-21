@@ -19,7 +19,8 @@ class Team extends Model
         'name',
         'email',
         'phone',
-        'position',
+        'department',
+        'role',
         'status',
         'password', // Add password here
     ];
@@ -32,6 +33,10 @@ class Team extends Model
         });
     }
 
+    public function user()
+    {
+        return $this->hasOne(User::class, 'employee_id');
+    }
     public function deliveries()
     {
         return $this->hasMany(Delivery::class, 'employee_id');

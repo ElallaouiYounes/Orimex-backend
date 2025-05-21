@@ -9,12 +9,18 @@ class Inventory extends Model
 {
     use HasFactory;
 
+    protected $table = 'inventory';
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id',
         'product_id',
-        'stock_levels',
+        'current_stock',
+        'available_stock',
+        'allocated_stock',
+        'min_stock_level',
+        'max_stock_level',
         'location',
         'warehouse',
         'last_updated',

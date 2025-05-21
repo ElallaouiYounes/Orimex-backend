@@ -23,6 +23,10 @@ class User extends Authenticatable
         'password',
     ];
 
+    public function employee()
+    {
+        return $this->belongsTo(Team::class, 'employee_id');
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

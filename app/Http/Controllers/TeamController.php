@@ -16,22 +16,19 @@ class TeamController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'id' => 'required|string|unique:team,id',
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:team,email',
             'phone' => 'required|string|max:20',
-            'position' => 'required|string|max:100',
+            'department' => 'required|string|max:100',
+            'role' => 'required|string|max:100',
             'password' => 'required|string|min:8', // Password validation
             'status' => 'required|in:working,vacation,retired', // Updated status validation
         ]);
 
-        $last = Team::latest('created_at')->first();
-        $lastId = $last ? (int)substr($last->id, 5) : 0;
-        $newId = 'TEAM-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
-
         $team = Team::create([
-            'id' => $newId,
-            'password' => Hash::make($validated['password']), // Hash the password before saving
-            ...$validated
+            ...$validated,
+            'password' => Hash::make($validated['password'])
         ]);
 
         return response()->json($team, 201);
@@ -51,7 +48,8 @@ class TeamController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:team,email,' . $team->id,
             'phone' => 'sometimes|string|max:20',
-            'position' => 'sometimes|string|max:100',
+            'department' => 'sometimes|string|max:100',
+            'role' => 'sometimes|string|max:100',
             'password' => 'sometimes|string|min:8', // Password validation
             'status' => 'sometimes|in:working,vacation,retired', // Updated status validation
         ]);

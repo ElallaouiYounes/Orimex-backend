@@ -15,11 +15,14 @@ return new class extends Migration
             $table->string('id')->primary();
             $table->string('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->integer('stock_levels');
+            $table->integer('current_stock')->default(0);
+            $table->integer('available_stock')->default(0);
+            $table->integer('allocated_stock')->default(0);
+            $table->integer('min_stock_level')->default(0);
+            $table->integer('max_stock_level')->default(0);
             $table->string('location');
             $table->string('warehouse');
-            $table->timestamp('last_updated');
-            $table->enum('status', ['in-stock', 'out-of-stock', 'low stock'])->default('in-stock');
+            $table->enum('status', ['in-stock', 'out-of-stock', 'low-stock'])->default('out-of-stock');
             $table->timestamps();
         });
     }

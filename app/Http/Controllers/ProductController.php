@@ -21,8 +21,8 @@ class ProductController extends Controller
                 'color' => $product->color,
                 'dimensions' => $product->dimensions,
                 'price' => $product->price,
-                'stock_status' => $product->inventory->status ?? 'unknown',
-                'stock_levels' => $product->inventory->stock_levels ?? 'unknown',
+                'stock_status' => $product->inventory->status ?? 'Out of stock',
+                'current_stock' => $product->inventory->current_stock ?? 0,
             ];
         });
 
@@ -32,6 +32,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'id' => 'required|string|unique:products,id',
             'barcode' => 'required|string|unique:products,barcode',
             'name' => 'required|string|max:255',
             'category' => 'required|string',
@@ -41,11 +42,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
         ]);
 
-        $lastProduct = Product::latest('created_at')->first();
-        $lastId = $lastProduct ? (int)substr($lastProduct->id, 5) : 0;
-        $newId = 'PROD-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
-
-        $product = Product::create(array_merge($validated, ['id' => $newId]));
+        $product = Product::create($validated);
 
         return response()->json($product, 201);
     }
@@ -63,7 +60,8 @@ class ProductController extends Controller
             'color' => $product->color,
             'dimensions' => $product->dimensions,
             'price' => $product->price,
-            'stock_status' => $product->inventory->status ?? 'unknown',
+            'stock_status' => $product->inventory->status ?? 'Out of stock',
+            'current_stock' => $product->inventory->current_stock ?? 0,
         ]);
     }
 

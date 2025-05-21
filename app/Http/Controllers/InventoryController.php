@@ -15,18 +15,27 @@ class InventoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'id' => 'required|string|unique:inventory,id',
             'product_id' => 'required|exists:products,id',
-            'stock_levels' => 'required|integer',
+            'current_stock' => 'required|integer|min:0',
+            'available_stock' => 'required|integer|min:0',
+            'allocated_stock' => 'required|integer|min:0',
+            'min_stock_level' => 'required|integer|min:0',
+            'max_stock_level' => 'required|integer|gt:min_stock_level',
             'location' => 'required|string',
             'warehouse' => 'required|string',
-            'status' => 'required|in:in-stock,out-of-stock,low stock',
         ]);
 
-        $lastInventory = Inventory::latest('created_at')->first();
-        $lastId = $lastInventory ? (int)substr($lastInventory->id, 5) : 0;
-        $newId = 'INV-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+        // Calculate status automatically
+        $validated['status'] = $this->calculateStockStatus(
+            $validated['current_stock'],
+            $validated['min_stock_level']
+        );
 
-        $inventory = Inventory::create(array_merge($validated, ['id' => $newId]));
+        $validated['available_stock'] = $validated['current_stock'];
+        $validated['allocated_stock'] = 0;
+
+        $inventory = Inventory::create($validated);
 
         return response()->json($inventory, 201);
     }
@@ -42,11 +51,19 @@ class InventoryController extends Controller
         $inventory = Inventory::findOrFail($id);
 
         $validated = $request->validate([
-            'stock_levels' => 'sometimes|integer',
-            'status' => 'sometimes|in:in-stock,out-of-stock,low stock',
+            'current_stock' => 'sometimes|integer|min:0',
+            'min_stock_level' => 'sometimes|integer|min:0',
+            'max_stock_level' => 'sometimes|integer|gt:min_stock_level',
             'location' => 'sometimes|string',
             'warehouse' => 'sometimes|string',
         ]);
+
+        // Recalculate status if stock levels changed
+        if (isset($validated['current_stock']) || isset($validated['min_stock_level'])) {
+            $currentStock = $validated['current_stock'] ?? $inventory->current_stock;
+            $minStock = $validated['min_stock_level'] ?? $inventory->min_stock_level;
+            $validated['status'] = $this->calculateStockStatus($currentStock, $minStock);
+        }
 
         $inventory->update($validated);
 
@@ -59,5 +76,16 @@ class InventoryController extends Controller
         $inventory->delete();
 
         return response()->json(['message' => 'Inventory item deleted']);
+    }
+
+    protected function calculateStockStatus(int $currentStock, int $minStockLevel): string
+    {
+        if ($currentStock <= 0) {
+            return 'out-of-stock';
+        } elseif ($currentStock <= $minStockLevel) {
+            return 'low-stock';
+        } else {
+            return 'in-stock';
+        }
     }
 }
