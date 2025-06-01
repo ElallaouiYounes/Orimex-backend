@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('location');
             $table->integer('capacity')->default(0);
             $table->integer('on_hand')->default(0);
-            $table->string('manager_id');
-            $table->foreign('manager_id')->references('id')->on('team')->onDelete('cascade');
+            $table->string('manager');
+            $table->string('contact');
             $table->timestamps();
         });
     }
